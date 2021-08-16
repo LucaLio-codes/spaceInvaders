@@ -1,0 +1,11 @@
+{
+  "high_score" :999999,
+  "high_name": "LUCA",
+  "min" : 0,
+  "top_ten": [
+    {
+      "Name": "LUCA",
+      "Score": 999999
+    }
+  ]
+}
