@@ -1,11 +1,47 @@
 {
-  "high_score" :999999,
-  "high_name": "LUCA",
-  "min" : 0,
-  "top_ten": [
-    {
-      "Name": "LUCA",
-      "Score": 999999
-    }
-  ]
+    "high_score": 999999,
+    "high_name": "LUCA",
+    "min": 600,
+    "top_ten": [
+        {
+            "Name": "LUCA",
+            "Score": 999999
+        },
+        {
+            "Name": "LUCA",
+            "Score": 999999
+        },
+        {
+            "Name": "LUCA",
+            "Score": 999999
+        },
+        {
+            "Name": "AAAA",
+            "Score": 1000
+        },
+        {
+            "Name": "ASDF",
+            "Score": 800
+        },
+        {
+            "Name": "ASDF",
+            "Score": 700
+        },
+        {
+            "Name": "ASDF",
+            "Score": 600
+        },
+        {
+            "Name": "ASDF",
+            "Score": 600
+        },
+        {
+            "Name": "ASDF",
+            "Score": 600
+        },
+        {
+            "Name": "ASDF",
+            "Score": 600
+        }
+    ]
 }

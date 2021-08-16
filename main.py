@@ -6,6 +6,8 @@ import util.helpers as help
 from util.sprites import Tank, BulletTank, Alien, HorizontalBoundary, VerticalBoundary, BunkerTile, BulletAlien, \
     MyGroup, HUDText, SplashAlien, SplashText
 import math
+from functools import reduce
+import operator
 
 
 SCALE = 3
@@ -28,6 +30,7 @@ class Main:
         self.paused = False
         self.score = 0
         self.direction = 1
+        self.char_pos = 0
         with open("data/scores.json") as f:
             self.json_dict = json.load(f)
 
@@ -114,20 +117,17 @@ class Main:
                                      (dims[0]/2, dims[1]/8 + title.rect.height),
                                      WHITE,
                                      27)
-        hs_controls_1 = HUDText("UP, DOWN: Scroll Character", (0 + 5*SCALE, dims[1] - (3 * 15 + 5 * SCALE)), WHITE, 15)
-        hs_controls_2 = HUDText("Space: Confirm", (0 + 5*SCALE, dims[1] - (2 * 15 + 5 * SCALE)), WHITE, 15)
-        hs_controls_3 = HUDText("Backspace: Undo", (0 + 5*SCALE, dims[1] - (15 + 5 * SCALE)), WHITE, 15)
+        hs_controls_1 = HUDText("Space: Confirm", (0 + 5*SCALE, dims[1] - (2 * 15 + 5 * SCALE)), WHITE, 15)
+        hs_controls_2 = HUDText("Backspace: Undo", (0 + 5*SCALE, dims[1] - (15 + 5 * SCALE)), WHITE, 15)
         dummy_char = SplashText("_", (dims[0]/2, dims[1]/2),GREEN, 50)
         self.input = [
             SplashText("_", (dims[0]/2 - 2 * (dummy_char.rect.width + 5 * SCALE), dims[1]/2),GREEN, 50),
             SplashText("_", (dims[0]/2 - dummy_char.rect.width + 5 * SCALE, dims[1]/2),GREEN, 50),
-            SplashText("_", (dims[0]/2 + 2.5 * (dummy_char.rect.width + 5 * SCALE), dims[1]/2),GREEN, 50),
             SplashText("_", (dims[0]/2 + dummy_char.rect.width + 5 * SCALE, dims[1]/2),GREEN, 50),
+            SplashText("_", (dims[0]/2 + 2.5 * (dummy_char.rect.width + 5 * SCALE), dims[1]/2),GREEN, 50),
         ]
-        # TODO Indicator to see which char is beeing edited
         self.newHigh = MyGroup(high_score_text, high_score, high_score_name, high_score_score, hs_controls_1,
-                               hs_controls_2, hs_controls_3, title, self.input)
-
+                               hs_controls_2, title, self.input)
 
     def main_loop(self):
         while True:
@@ -184,6 +184,8 @@ class Main:
                     game_over = True
                     if self.score > self.json_dict["min"]:
                         new_high = True
+                        event = pygame.event.Event(pygame.USEREVENT + 5)
+                        pygame.time.set_timer(event.type, 500)
                     pygame.time.wait(1000)
                     break
 
@@ -196,6 +198,30 @@ class Main:
                 if new_high:
                     self.handle_events(True)
                     self.render(3)
+                    text_finished = reduce(operator.and_, map(lambda x: x.text != '_', self.input))
+                    if self.char_pos > 3:
+                        # Input Finished?
+                        if text_finished:
+                            new_high = False
+                            text = reduce(operator.add, map(lambda x:x.text, self.input))
+                            new_obj = {
+                                "Name": text,
+                                "Score": self.score
+                            }
+                            print(self.json_dict)
+                            self.json_dict["top_ten"].append(new_obj)
+                            tmp = self.json_dict["top_ten"]
+                            tmp = sorted(tmp, key=operator.itemgetter("Score"), reverse=True)
+                            tmp = tmp[:10]
+                            print(len(tmp))
+                            if len(tmp) == 10:
+                                print("happens")
+                                self.json_dict["min"] = tmp[9]["Score"]
+                            self.json_dict["top_ten"] = tmp
+                            with open("data/scores.json", 'w') as f:
+                                f.write(json.dumps(self.json_dict, indent=4))
+                        else:
+                            self.char_pos -= 1
                 else:
                     self.handle_events()
                     self.render(2)
@@ -210,6 +236,26 @@ class Main:
             # Quit
             if e.type == pygame.QUIT:
                 sys.exit()
+            # Handle new High Score
+            if text:
+                if e.type == pygame.KEYDOWN:
+                    if e.key == pygame.K_SPACE:
+                        if self.char_pos < 3 and not self.input[self.char_pos].visible :
+                            self.input[self.char_pos].blink()
+                        self.char_pos += 1
+                    elif self.char_pos in range(1,4) and e.key == pygame.K_BACKSPACE:
+                        if not self.input[self.char_pos].visible:
+                            self.input[self.char_pos].blink()
+                        self.char_pos -= 1
+                    else:
+                        tmp = pygame.key.name(e.key).upper()
+                        if self.char_pos <= 3 and len(tmp) == 1:
+                            if not self.input[self.char_pos].visible:
+                                self.input[self.char_pos].blink()
+                            self.input[self.char_pos].update(tmp)
+                            self.char_pos += 1
+                elif e.type == pygame.USEREVENT + 5 and self.char_pos < 4:
+                    self.input[self.char_pos].blink()
             # Debug kill Aliens
             elif e.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
@@ -221,17 +267,7 @@ class Main:
             # Key Events
             elif e.type == pygame.KEYDOWN:
                 if e.key == pygame.K_SPACE:
-                    if text:
-                        # TODO confirm char/ next char
-                        pass
-                    else:
-                        self.bullets.add(BulletTank(self.tank.get_pos(), SCALE))
-                if e.key == pygame.K_UP:
-                    # TODO scroll Char up
-                    pass
-                if e.key == pygame.K_DOWN:
-                    # TODO scroll Char up
-                    pass
+                    self.bullets.add(BulletTank(self.tank.get_pos(), SCALE))
                 if e.key == pygame.K_k:
                     self.lives_count = 0
                 if e.key == pygame.K_ESCAPE:

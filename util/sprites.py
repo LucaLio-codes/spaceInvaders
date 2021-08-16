@@ -260,13 +260,26 @@ class SplashText(MySprite):
     def __init__(self, text, pos, color, size):
         super(SplashText, self).__init__()
 
+        self.visible = True
         self.color = color
+        self.text = text
         self.font = pygame.font.Font("data/crazy.TTF", size)
         self.image = self.font.render(text, False, color)
+        self.image_back = self.font.render(text, False, color)
+        self.black = self.font.render(text, False, (0, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = pos
         self.rect.x -= self.rect.width / 2
 
+    def blink(self):
+        self.visible = not self.visible
+        if self.visible:
+            self.image = self.image_back
+        else:
+            self.image = self.black
+
     def update(self, *args, **kwargs) -> None:
         if args:
-            self.image = self.font.render(str(args[0]), False, self.color)
+            self.text = str(args[0])
+            self.image = self.font.render(self.text, False, self.color)
+            self.image_back = self.font.render(self.text, False, self.color)
